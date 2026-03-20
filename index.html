@@ -97,6 +97,33 @@
     .tab-card h6 {
       margin-bottom: .3rem;
     }
+
+    .nav-pills .nav-link {
+      border-radius: 999px;
+      font-weight: 700;
+      padding: 10px 18px;
+      color: #0d6efd;
+      background: #eaf2ff;
+    }
+
+    .nav-pills .nav-link.active {
+      background: #0d6efd;
+      color: #fff;
+      box-shadow: 0 6px 16px rgba(13, 110, 253, 0.25);
+    }
+
+    .tab-pane-card {
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+      padding: 24px;
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #1e293b;
+    }
   </style>
 </head>
 <body>
@@ -107,7 +134,7 @@
         <div>
           <h1 class="fw-bold mb-2">Painel de Status por Escola</h1>
           <p class="mb-0 fs-5">
-            Visualização consolidada dos contratos A, B e C
+            Acompanhamento por Contrato A, Contrato B e Contrato C
           </p>
         </div>
       </div>
@@ -168,39 +195,129 @@
 
     <div class="row g-4 mb-4" id="sheetSummaries"></div>
 
-    <div class="card card-soft">
-      <div class="card-header bg-white border-0 pt-4 px-4">
-        <h4 class="fw-bold mb-1">Visão consolidada por escola</h4>
-        <p class="text-secondary mb-0">Cada coluna representa um contrato.</p>
-      </div>
-      <div class="card-body">
-        <div id="loading" class="loading-box">Carregando dados...</div>
+    <div class="mb-4">
+      <ul class="nav nav-pills flex-wrap gap-2" id="statusTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="tab-geral-btn" data-bs-toggle="pill" data-bs-target="#tab-geral" type="button" role="tab">
+            Visão Geral
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="tab-a-btn" data-bs-toggle="pill" data-bs-target="#tab-a" type="button" role="tab">
+            Contrato A
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="tab-b-btn" data-bs-toggle="pill" data-bs-target="#tab-b" type="button" role="tab">
+            Contrato B
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="tab-c-btn" data-bs-toggle="pill" data-bs-target="#tab-c" type="button" role="tab">
+            Contrato C
+          </button>
+        </li>
+      </ul>
+    </div>
 
-        <div class="table-responsive d-none" id="tableWrapper">
-          <table class="table table-hover align-middle" id="statusTable">
-            <thead>
-              <tr id="tableHeadRow">
-                <th>Nome da Escola</th>
-              </tr>
-            </thead>
-            <tbody id="tableBody"></tbody>
-          </table>
+    <div id="loading" class="loading-box">Carregando dados...</div>
+
+    <div class="tab-content d-none" id="tabContentWrapper">
+      <div class="tab-pane fade show active" id="tab-geral" role="tabpanel">
+        <div class="tab-pane-card">
+          <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div>
+              <div class="section-title">Visão consolidada por escola</div>
+              <div class="text-secondary">Comparação lado a lado entre os 3 contratos.</div>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle" id="tableGeral">
+              <thead>
+                <tr id="tableHeadGeral">
+                  <th>Nome da Escola</th>
+                </tr>
+              </thead>
+              <tbody id="tableBodyGeral"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="tab-a" role="tabpanel">
+        <div class="tab-pane-card">
+          <div class="section-title mb-1">Contrato A</div>
+          <div class="text-secondary mb-3">Status individual das escolas no Contrato A.</div>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle" id="tableA">
+              <thead>
+                <tr>
+                  <th>Nome da Escola</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="tableBodyA"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="tab-b" role="tabpanel">
+        <div class="tab-pane-card">
+          <div class="section-title mb-1">Contrato B</div>
+          <div class="text-secondary mb-3">Status individual das escolas no Contrato B.</div>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle" id="tableB">
+              <thead>
+                <tr>
+                  <th>Nome da Escola</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="tableBodyB"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="tab-c" role="tabpanel">
+        <div class="tab-pane-card">
+          <div class="section-title mb-1">Contrato C</div>
+          <div class="text-secondary mb-3">Status individual das escolas no Contrato C.</div>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle" id="tableC">
+              <thead>
+                <tr>
+                  <th>Nome da Escola</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="tableBodyC"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
 
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbwbiEp3gBKc1LuRxtD9jwvs3GN-8NN_i_iUA9l6SusNpUY4xsfH9HX-PElsOETcC_E/exec";
+
+    const CONTRACTS = ["Contrato A", "Contrato B", "Contrato C"];
 
     const searchInput = document.getElementById("searchInput");
     const statusFilter = document.getElementById("statusFilter");
     const reloadBtn = document.getElementById("reloadBtn");
     const loading = document.getElementById("loading");
-    const tableWrapper = document.getElementById("tableWrapper");
-    const tableHeadRow = document.getElementById("tableHeadRow");
-    const tableBody = document.getElementById("tableBody");
+    const tabContentWrapper = document.getElementById("tabContentWrapper");
+    const tableHeadGeral = document.getElementById("tableHeadGeral");
+    const tableBodyGeral = document.getElementById("tableBodyGeral");
+    const tableBodyA = document.getElementById("tableBodyA");
+    const tableBodyB = document.getElementById("tableBodyB");
+    const tableBodyC = document.getElementById("tableBodyC");
     const sheetSummaries = document.getElementById("sheetSummaries");
 
     let consolidatedData = [];
@@ -225,9 +342,30 @@
       return `<span class="badge-status status-vazio">—</span>`;
     }
 
+    function passesFilter(item) {
+      const searchValue = normalizeSchoolName(searchInput.value);
+      const filterValue = statusFilter.value;
+
+      const nomeMatch = normalizeSchoolName(item.escola).includes(searchValue);
+      if (!nomeMatch) return false;
+
+      const statuses = sheetNames.map(sheet => item[sheet] || "");
+      const hasOk = statuses.includes("Ok");
+      const hasPendente = statuses.includes("Pendente");
+      const onlyPendentes = statuses.every(s => s === "Pendente" || s === "");
+      const allOk = statuses.every(s => s === "Ok" || s === "");
+
+      if (filterValue === "ok") return hasOk;
+      if (filterValue === "pendente") return hasPendente;
+      if (filterValue === "somente_pendente") return hasPendente && onlyPendentes;
+      if (filterValue === "tudo_ok") return hasOk && allOk;
+
+      return true;
+    }
+
     async function loadData() {
       loading.classList.remove("d-none");
-      tableWrapper.classList.add("d-none");
+      tabContentWrapper.classList.add("d-none");
       loading.textContent = "Carregando dados...";
 
       try {
@@ -238,7 +376,7 @@
           throw new Error(json.error || "Erro ao carregar os dados.");
         }
 
-        sheetNames = json.sheets || [];
+        sheetNames = json.sheets || CONTRACTS;
         sheetStats = json.summaries || [];
         consolidatedData = json.data || [];
 
@@ -247,10 +385,10 @@
         document.getElementById("totalPendentes").textContent = json.totals?.pendente ?? 0;
 
         renderSheetSummaries();
-        renderTable();
+        renderAllTables();
 
         loading.classList.add("d-none");
-        tableWrapper.classList.remove("d-none");
+        tabContentWrapper.classList.remove("d-none");
       } catch (error) {
         console.error(error);
         loading.textContent = "Não foi possível carregar os dados da planilha/API.";
@@ -289,37 +427,24 @@
       });
     }
 
-    function renderTable() {
-      tableHeadRow.innerHTML = "<th>Nome da Escola</th>";
+    function renderAllTables() {
+      const filtered = consolidatedData.filter(passesFilter);
+      renderGeneralTable(filtered);
+      renderSingleContractTable(filtered, "Contrato A", tableBodyA);
+      renderSingleContractTable(filtered, "Contrato B", tableBodyB);
+      renderSingleContractTable(filtered, "Contrato C", tableBodyC);
+    }
+
+    function renderGeneralTable(data) {
+      tableHeadGeral.innerHTML = "<th>Nome da Escola</th>";
       sheetNames.forEach(sheet => {
-        tableHeadRow.innerHTML += `<th>${sheet}</th>`;
+        tableHeadGeral.innerHTML += `<th>${sheet}</th>`;
       });
 
-      const searchValue = normalizeSchoolName(searchInput.value);
-      const filterValue = statusFilter.value;
+      tableBodyGeral.innerHTML = "";
 
-      const filtered = consolidatedData.filter(item => {
-        const nomeMatch = normalizeSchoolName(item.escola).includes(searchValue);
-        if (!nomeMatch) return false;
-
-        const statuses = sheetNames.map(sheet => item[sheet] || "");
-        const hasOk = statuses.includes("Ok");
-        const hasPendente = statuses.includes("Pendente");
-        const onlyPendentes = statuses.every(s => s === "Pendente" || s === "");
-        const allOk = statuses.every(s => s === "Ok" || s === "");
-
-        if (filterValue === "ok") return hasOk;
-        if (filterValue === "pendente") return hasPendente;
-        if (filterValue === "somente_pendente") return hasPendente && onlyPendentes;
-        if (filterValue === "tudo_ok") return hasOk && allOk;
-
-        return true;
-      });
-
-      tableBody.innerHTML = "";
-
-      if (!filtered.length) {
-        tableBody.innerHTML = `
+      if (!data.length) {
+        tableBodyGeral.innerHTML = `
           <tr>
             <td colspan="${sheetNames.length + 1}" class="text-center py-4 text-secondary">
               Nenhuma escola encontrada com esse filtro.
@@ -329,7 +454,7 @@
         return;
       }
 
-      filtered.forEach(item => {
+      data.forEach(item => {
         const tr = document.createElement("tr");
         let rowHtml = `<td class="school-name">${item.escola}</td>`;
 
@@ -338,12 +463,36 @@
         });
 
         tr.innerHTML = rowHtml;
-        tableBody.appendChild(tr);
+        tableBodyGeral.appendChild(tr);
       });
     }
 
-    searchInput.addEventListener("input", renderTable);
-    statusFilter.addEventListener("change", renderTable);
+    function renderSingleContractTable(data, contractName, targetBody) {
+      targetBody.innerHTML = "";
+
+      if (!data.length) {
+        targetBody.innerHTML = `
+          <tr>
+            <td colspan="2" class="text-center py-4 text-secondary">
+              Nenhuma escola encontrada com esse filtro.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      data.forEach(item => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="school-name">${item.escola}</td>
+          <td class="text-center">${statusBadge(item[contractName] || "")}</td>
+        `;
+        targetBody.appendChild(tr);
+      });
+    }
+
+    searchInput.addEventListener("input", renderAllTables);
+    statusFilter.addEventListener("change", renderAllTables);
     reloadBtn.addEventListener("click", loadData);
 
     loadData();
