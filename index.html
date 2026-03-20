@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Painel de Status por Escola</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
@@ -14,7 +14,7 @@
 
     .hero {
       background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
-      color: white;
+      color: #fff;
       border-radius: 22px;
       padding: 32px;
       box-shadow: 0 10px 30px rgba(13, 110, 253, 0.18);
@@ -26,13 +26,49 @@
       box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
     }
 
+    .summary-number {
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .mini-label {
+      font-size: 0.85rem;
+      color: #64748b;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    .filter-box {
+      border-radius: 14px;
+      border: 1px solid #dbe3ef;
+      padding: 12px 14px;
+      box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.03);
+    }
+
+    .table thead th {
+      background: #0d6efd;
+      color: #fff;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .school-name {
+      font-weight: 700;
+      color: #1e293b;
+    }
+
     .badge-status {
       font-size: 0.85rem;
       padding: 0.5rem 0.8rem;
       border-radius: 999px;
       font-weight: 700;
       display: inline-block;
-      min-width: 100px;
+      min-width: 110px;
       text-align: center;
     }
 
@@ -51,46 +87,11 @@
       color: #4b5563;
     }
 
-    .summary-number {
-      font-size: 2rem;
-      font-weight: 800;
-      line-height: 1;
-    }
-
-    .table thead th {
-      background: #0d6efd;
-      color: white;
-      position: sticky;
-      top: 0;
-      z-index: 1;
-      vertical-align: middle;
-      text-align: center;
-    }
-
-    .school-name {
-      font-weight: 700;
-      color: #1e293b;
-    }
-
-    .filter-box {
-      border-radius: 14px;
-      border: 1px solid #dbe3ef;
-      padding: 12px 14px;
-      box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.03);
-    }
-
-    .mini-label {
-      font-size: 0.85rem;
-      color: #64748b;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .03em;
-    }
-
     .loading-box {
       padding: 40px;
       text-align: center;
       color: #64748b;
+      font-size: 1rem;
     }
 
     .tab-card h6 {
@@ -106,17 +107,13 @@
         <div>
           <h1 class="fw-bold mb-2">Painel de Status por Escola</h1>
           <p class="mb-0 fs-5">
-            Visualização consolidada das 3 páginas da planilha por Nome da Escola
+            Visualização consolidada dos contratos A, B e C
           </p>
-        </div>
-        <div class="text-lg-end">
-          <div class="fw-semibold">Fonte:</div>
-          <div>Planilha Status - Contratos</div>
         </div>
       </div>
     </div>
 
-    <div class="row g-4 mb-4" id="summaryCards">
+    <div class="row g-4 mb-4">
       <div class="col-md-4">
         <div class="card card-soft h-100">
           <div class="card-body">
@@ -174,10 +171,10 @@
     <div class="card card-soft">
       <div class="card-header bg-white border-0 pt-4 px-4">
         <h4 class="fw-bold mb-1">Visão consolidada por escola</h4>
-        <p class="text-secondary mb-0">Cada coluna representa uma aba da planilha.</p>
+        <p class="text-secondary mb-0">Cada coluna representa um contrato.</p>
       </div>
       <div class="card-body">
-        <div id="loading" class="loading-box">Carregando dados da planilha...</div>
+        <div id="loading" class="loading-box">Carregando dados...</div>
 
         <div class="table-responsive d-none" id="tableWrapper">
           <table class="table table-hover align-middle" id="statusTable">
@@ -191,281 +188,165 @@
         </div>
       </div>
     </div>
+
   </div>
 
- <script>
-  const SHEETS = ["Contrato A", "Contrato B", "Contrato C"];
-  const SHEET_ID = "2PACX-1vS9K3tv2AsUmURzuk9WGqHHmAJ28ra35ZOnolyn155bMC6kVBVMDqLUrXlMuhXUrS2LfVH97MVbYm8g";
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbzkEilvwExFa5RFOQK6apiprxdMDc1H0I4Rg-XmolpgW286pL1BguQtSriDP8owlRn97A/exec";
 
-  const searchInput = document.getElementById("searchInput");
-  const statusFilter = document.getElementById("statusFilter");
-  const reloadBtn = document.getElementById("reloadBtn");
-  const loading = document.getElementById("loading");
-  const tableWrapper = document.getElementById("tableWrapper");
-  const tableHeadRow = document.getElementById("tableHeadRow");
-  const tableBody = document.getElementById("tableBody");
-  const sheetSummaries = document.getElementById("sheetSummaries");
+    const searchInput = document.getElementById("searchInput");
+    const statusFilter = document.getElementById("statusFilter");
+    const reloadBtn = document.getElementById("reloadBtn");
+    const loading = document.getElementById("loading");
+    const tableWrapper = document.getElementById("tableWrapper");
+    const tableHeadRow = document.getElementById("tableHeadRow");
+    const tableBody = document.getElementById("tableBody");
+    const sheetSummaries = document.getElementById("sheetSummaries");
 
-  let consolidatedData = [];
-  let sheetStats = [];
+    let consolidatedData = [];
+    let sheetStats = [];
+    let sheetNames = [];
 
-  function normalizeText(value) {
-    return (value || "")
-      .toString()
-      .trim()
-      .replace(/\s+/g, " ");
-  }
-
-  function normalizeSchoolName(value) {
-    return normalizeText(value).toLowerCase();
-  }
-
-  function normalizeStatus(value) {
-    const v = normalizeText(value).toLowerCase();
-
-    if (v === "ok") return "Ok";
-    if (v === "pendente") return "Pendente";
-
-    return "";
-  }
-
-  function statusBadge(status) {
-    if (status === "Ok") {
-      return `<span class="badge-status status-ok">Ok</span>`;
+    function normalizeText(value) {
+      return (value || "").toString().trim().replace(/\s+/g, " ");
     }
-    if (status === "Pendente") {
-      return `<span class="badge-status status-pendente">Pendente</span>`;
+
+    function normalizeSchoolName(value) {
+      return normalizeText(value).toLowerCase();
     }
-    return `<span class="badge-status status-vazio">—</span>`;
-  }
 
-  function csvUrl(sheetName) {
-    return `https://docs.google.com/spreadsheets/d/e/${SHEET_ID}/pub?output=csv&sheet=${encodeURIComponent(sheetName)}`;
-  }
+    function statusBadge(status) {
+      if (status === "Ok") {
+        return `<span class="badge-status status-ok">Ok</span>`;
+      }
+      if (status === "Pendente") {
+        return `<span class="badge-status status-pendente">Pendente</span>`;
+      }
+      return `<span class="badge-status status-vazio">—</span>`;
+    }
 
-  function parseCSV(text) {
-    const rows = [];
-    let row = [];
-    let cell = "";
-    let inQuotes = false;
+    async function loadData() {
+      loading.classList.remove("d-none");
+      tableWrapper.classList.add("d-none");
+      loading.textContent = "Carregando dados...";
 
-    for (let i = 0; i < text.length; i++) {
-      const char = text[i];
-      const next = text[i + 1];
+      try {
+        const response = await fetch(API_URL);
+        const json = await response.json();
 
-      if (char === '"') {
-        if (inQuotes && next === '"') {
-          cell += '"';
-          i++;
-        } else {
-          inQuotes = !inQuotes;
+        if (!json.success) {
+          throw new Error(json.error || "Erro ao carregar os dados.");
         }
-      } else if (char === "," && !inQuotes) {
-        row.push(cell);
-        cell = "";
-      } else if ((char === "\n" || char === "\r") && !inQuotes) {
-        if (char === "\r" && next === "\n") i++;
-        row.push(cell);
-        rows.push(row);
-        row = [];
-        cell = "";
-      } else {
-        cell += char;
+
+        sheetNames = json.sheets || [];
+        sheetStats = json.summaries || [];
+        consolidatedData = json.data || [];
+
+        document.getElementById("totalEscolas").textContent = json.totals?.escolas ?? 0;
+        document.getElementById("totalOk").textContent = json.totals?.ok ?? 0;
+        document.getElementById("totalPendentes").textContent = json.totals?.pendente ?? 0;
+
+        renderSheetSummaries();
+        renderTable();
+
+        loading.classList.add("d-none");
+        tableWrapper.classList.remove("d-none");
+      } catch (error) {
+        console.error(error);
+        loading.textContent = "Não foi possível carregar os dados da planilha/API.";
       }
     }
 
-    if (cell.length > 0 || row.length > 0) {
-      row.push(cell);
-      rows.push(row);
-    }
+    function renderSheetSummaries() {
+      sheetSummaries.innerHTML = "";
 
-    return rows;
-  }
+      sheetStats.forEach(sheet => {
+        const col = document.createElement("div");
+        col.className = "col-md-4";
 
-  async function fetchSheet(sheetName) {
-    const response = await fetch(csvUrl(sheetName));
-    if (!response.ok) {
-      throw new Error(`Erro ao carregar a aba: ${sheetName}`);
-    }
-
-    const csvText = await response.text();
-    const rows = parseCSV(csvText).filter(r => r.some(c => normalizeText(c) !== ""));
-
-    if (rows.length <= 1) return [];
-
-    const dataRows = rows.slice(1);
-
-    return dataRows
-      .map(r => {
-        const escolaOriginal = normalizeText(r[0] || "");
-        const statusOriginal = normalizeText(r[1] || "");
-
-        return {
-          escola: escolaOriginal,
-          escolaKey: normalizeSchoolName(escolaOriginal),
-          status: normalizeStatus(statusOriginal)
-        };
-      })
-      .filter(item => item.escolaKey !== "");
-  }
-
-  async function loadData() {
-    loading.classList.remove("d-none");
-    tableWrapper.classList.add("d-none");
-    loading.textContent = "Carregando dados da planilha...";
-
-    try {
-      const sheetsData = await Promise.all(
-        SHEETS.map(async (sheetName) => ({
-          name: sheetName,
-          rows: await fetchSheet(sheetName)
-        }))
-      );
-
-      const schoolMap = new Map();
-      let totalOk = 0;
-      let totalPendentes = 0;
-
-      sheetStats = sheetsData.map(sheet => {
-        let ok = 0;
-        let pendente = 0;
-
-        sheet.rows.forEach(item => {
-          if (!schoolMap.has(item.escolaKey)) {
-            schoolMap.set(item.escolaKey, {
-              escola: item.escola
-            });
-          }
-
-          const schoolEntry = schoolMap.get(item.escolaKey);
-          schoolEntry[sheet.name] = item.status;
-
-          if (item.status === "Ok") {
-            ok++;
-            totalOk++;
-          } else if (item.status === "Pendente") {
-            pendente++;
-            totalPendentes++;
-          }
-        });
-
-        return {
-          name: sheet.name,
-          ok,
-          pendente,
-          total: sheet.rows.length
-        };
-      });
-
-      consolidatedData = Array.from(schoolMap.values())
-        .sort((a, b) => a.escola.localeCompare(b.escola, "pt-BR"));
-
-      document.getElementById("totalEscolas").textContent = consolidatedData.length;
-      document.getElementById("totalOk").textContent = totalOk;
-      document.getElementById("totalPendentes").textContent = totalPendentes;
-
-      renderSheetSummaries();
-      renderTable();
-
-      loading.classList.add("d-none");
-      tableWrapper.classList.remove("d-none");
-    } catch (error) {
-      console.error(error);
-      loading.textContent = "Não foi possível carregar os dados da planilha.";
-    }
-  }
-
-  function renderSheetSummaries() {
-    sheetSummaries.innerHTML = "";
-
-    sheetStats.forEach(sheet => {
-      const col = document.createElement("div");
-      col.className = "col-md-4";
-
-      col.innerHTML = `
-        <div class="card card-soft h-100 tab-card">
-          <div class="card-body">
-            <h6 class="fw-bold">${sheet.name}</h6>
-            <div class="text-secondary mb-3">Resumo individual da aba</div>
-            <div class="d-flex justify-content-between mb-2">
-              <span>Ok</span>
-              <strong class="text-success">${sheet.ok}</strong>
-            </div>
-            <div class="d-flex justify-content-between mb-2">
-              <span>Pendente</span>
-              <strong class="text-danger">${sheet.pendente}</strong>
-            </div>
-            <div class="d-flex justify-content-between">
-              <span>Total</span>
-              <strong>${sheet.total}</strong>
+        col.innerHTML = `
+          <div class="card card-soft h-100 tab-card">
+            <div class="card-body">
+              <h6 class="fw-bold">${sheet.name}</h6>
+              <div class="text-secondary mb-3">Resumo individual</div>
+              <div class="d-flex justify-content-between mb-2">
+                <span>Ok</span>
+                <strong class="text-success">${sheet.ok || 0}</strong>
+              </div>
+              <div class="d-flex justify-content-between mb-2">
+                <span>Pendente</span>
+                <strong class="text-danger">${sheet.pendente || 0}</strong>
+              </div>
+              <div class="d-flex justify-content-between">
+                <span>Total</span>
+                <strong>${sheet.total || 0}</strong>
+              </div>
             </div>
           </div>
-        </div>
-      `;
+        `;
 
-      sheetSummaries.appendChild(col);
-    });
-  }
-
-  function renderTable() {
-    tableHeadRow.innerHTML = "<th>Nome da Escola</th>";
-    SHEETS.forEach(sheet => {
-      tableHeadRow.innerHTML += `<th>${sheet}</th>`;
-    });
-
-    const searchValue = normalizeSchoolName(searchInput.value);
-    const filterValue = statusFilter.value;
-
-    const filtered = consolidatedData.filter(item => {
-      const nomeMatch = normalizeSchoolName(item.escola).includes(searchValue);
-      if (!nomeMatch) return false;
-
-      const statuses = SHEETS.map(sheet => item[sheet] || "");
-      const hasOk = statuses.includes("Ok");
-      const hasPendente = statuses.includes("Pendente");
-      const onlyPendentes = statuses.every(s => s === "Pendente" || s === "");
-      const allOk = statuses.every(s => s === "Ok" || s === "");
-
-      if (filterValue === "ok") return hasOk;
-      if (filterValue === "pendente") return hasPendente;
-      if (filterValue === "somente_pendente") return hasPendente && onlyPendentes;
-      if (filterValue === "tudo_ok") return hasOk && allOk;
-
-      return true;
-    });
-
-    tableBody.innerHTML = "";
-
-    if (!filtered.length) {
-      tableBody.innerHTML = `
-        <tr>
-          <td colspan="${SHEETS.length + 1}" class="text-center py-4 text-secondary">
-            Nenhuma escola encontrada com esse filtro.
-          </td>
-        </tr>
-      `;
-      return;
+        sheetSummaries.appendChild(col);
+      });
     }
 
-    filtered.forEach(item => {
-      const tr = document.createElement("tr");
-      let rowHtml = `<td class="school-name">${item.escola}</td>`;
-
-      SHEETS.forEach(sheet => {
-        rowHtml += `<td class="text-center">${statusBadge(item[sheet] || "")}</td>`;
+    function renderTable() {
+      tableHeadRow.innerHTML = "<th>Nome da Escola</th>";
+      sheetNames.forEach(sheet => {
+        tableHeadRow.innerHTML += `<th>${sheet}</th>`;
       });
 
-      tr.innerHTML = rowHtml;
-      tableBody.appendChild(tr);
-    });
-  }
+      const searchValue = normalizeSchoolName(searchInput.value);
+      const filterValue = statusFilter.value;
 
-  searchInput.addEventListener("input", renderTable);
-  statusFilter.addEventListener("change", renderTable);
-  reloadBtn.addEventListener("click", loadData);
+      const filtered = consolidatedData.filter(item => {
+        const nomeMatch = normalizeSchoolName(item.escola).includes(searchValue);
+        if (!nomeMatch) return false;
 
-  loadData();
-</script>
-  
+        const statuses = sheetNames.map(sheet => item[sheet] || "");
+        const hasOk = statuses.includes("Ok");
+        const hasPendente = statuses.includes("Pendente");
+        const onlyPendentes = statuses.every(s => s === "Pendente" || s === "");
+        const allOk = statuses.every(s => s === "Ok" || s === "");
+
+        if (filterValue === "ok") return hasOk;
+        if (filterValue === "pendente") return hasPendente;
+        if (filterValue === "somente_pendente") return hasPendente && onlyPendentes;
+        if (filterValue === "tudo_ok") return hasOk && allOk;
+
+        return true;
+      });
+
+      tableBody.innerHTML = "";
+
+      if (!filtered.length) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="${sheetNames.length + 1}" class="text-center py-4 text-secondary">
+              Nenhuma escola encontrada com esse filtro.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      filtered.forEach(item => {
+        const tr = document.createElement("tr");
+        let rowHtml = `<td class="school-name">${item.escola}</td>`;
+
+        sheetNames.forEach(sheet => {
+          rowHtml += `<td class="text-center">${statusBadge(item[sheet] || "")}</td>`;
+        });
+
+        tr.innerHTML = rowHtml;
+        tableBody.appendChild(tr);
+      });
+    }
+
+    searchInput.addEventListener("input", renderTable);
+    statusFilter.addEventListener("change", renderTable);
+    reloadBtn.addEventListener("click", loadData);
+
+    loadData();
+  </script>
 </body>
 </html>
