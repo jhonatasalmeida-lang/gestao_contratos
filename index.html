@@ -193,260 +193,279 @@
     </div>
   </div>
 
-  <script>
-    // Troque aqui pelos nomes EXATOS das 3 abas da sua planilha
-    const SHEETS = [
-      "Contrato A",
-      "Contrato B",
-      "Contrato C"
-    ];
+ <script>
+  const SHEETS = ["Contrato A", "Contrato B", "Contrato C"];
+  const SHEET_ID = "2PACX-1vS9K3tv2AsUmURzuk9WGqHHmAJ28ra35ZOnolyn155bMC6kVBVMDqLUrXlMuhXUrS2LfVH97MVbYm8g";
 
-    // ID da planilha publicada
-    const SHEET_ID = "2PACX-1vS9K3tv2AsUmURzuk9WGqHHmAJ28ra35ZOnolyn155bMC6kVBVMDqLUrXlMuhXUrS2LfVH97MVbYm8g";
+  const searchInput = document.getElementById("searchInput");
+  const statusFilter = document.getElementById("statusFilter");
+  const reloadBtn = document.getElementById("reloadBtn");
+  const loading = document.getElementById("loading");
+  const tableWrapper = document.getElementById("tableWrapper");
+  const tableHeadRow = document.getElementById("tableHeadRow");
+  const tableBody = document.getElementById("tableBody");
+  const sheetSummaries = document.getElementById("sheetSummaries");
 
-    const searchInput = document.getElementById("searchInput");
-    const statusFilter = document.getElementById("statusFilter");
-    const reloadBtn = document.getElementById("reloadBtn");
-    const loading = document.getElementById("loading");
-    const tableWrapper = document.getElementById("tableWrapper");
-    const tableHeadRow = document.getElementById("tableHeadRow");
-    const tableBody = document.getElementById("tableBody");
-    const sheetSummaries = document.getElementById("sheetSummaries");
+  let consolidatedData = [];
+  let sheetStats = [];
 
-    let consolidatedData = [];
-    let sheetStats = [];
+  function normalizeText(value) {
+    return (value || "")
+      .toString()
+      .trim()
+      .replace(/\s+/g, " ");
+  }
 
-    function normalizeStatus(value) {
-      const v = (value || "").toString().trim().toLowerCase();
-      if (v === "ok") return "Ok";
-      if (v === "pendente") return "Pendente";
-      return "";
+  function normalizeSchoolName(value) {
+    return normalizeText(value).toLowerCase();
+  }
+
+  function normalizeStatus(value) {
+    const v = normalizeText(value).toLowerCase();
+
+    if (v === "ok") return "Ok";
+    if (v === "pendente") return "Pendente";
+
+    return "";
+  }
+
+  function statusBadge(status) {
+    if (status === "Ok") {
+      return `<span class="badge-status status-ok">Ok</span>`;
     }
-
-    function statusBadge(status) {
-      if (status === "Ok") {
-        return `<span class="badge-status status-ok">Ok</span>`;
-      }
-      if (status === "Pendente") {
-        return `<span class="badge-status status-pendente">Pendente</span>`;
-      }
-      return `<span class="badge-status status-vazio">—</span>`;
+    if (status === "Pendente") {
+      return `<span class="badge-status status-pendente">Pendente</span>`;
     }
+    return `<span class="badge-status status-vazio">—</span>`;
+  }
 
-    function csvUrl(sheetName) {
-      return `https://docs.google.com/spreadsheets/d/e/${SHEET_ID}/pub?output=csv&sheet=${encodeURIComponent(sheetName)}`;
-    }
+  function csvUrl(sheetName) {
+    return `https://docs.google.com/spreadsheets/d/e/${SHEET_ID}/pub?output=csv&sheet=${encodeURIComponent(sheetName)}`;
+  }
 
-    function parseCSV(text) {
-      const rows = [];
-      let row = [];
-      let cell = "";
-      let inQuotes = false;
+  function parseCSV(text) {
+    const rows = [];
+    let row = [];
+    let cell = "";
+    let inQuotes = false;
 
-      for (let i = 0; i < text.length; i++) {
-        const char = text[i];
-        const next = text[i + 1];
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      const next = text[i + 1];
 
-        if (char === '"') {
-          if (inQuotes && next === '"') {
-            cell += '"';
-            i++;
-          } else {
-            inQuotes = !inQuotes;
-          }
-        } else if (char === "," && !inQuotes) {
-          row.push(cell);
-          cell = "";
-        } else if ((char === "\n" || char === "\r") && !inQuotes) {
-          if (char === "\r" && next === "\n") i++;
-          row.push(cell);
-          rows.push(row);
-          row = [];
-          cell = "";
+      if (char === '"') {
+        if (inQuotes && next === '"') {
+          cell += '"';
+          i++;
         } else {
-          cell += char;
+          inQuotes = !inQuotes;
         }
-      }
-
-      if (cell.length > 0 || row.length > 0) {
+      } else if (char === "," && !inQuotes) {
+        row.push(cell);
+        cell = "";
+      } else if ((char === "\n" || char === "\r") && !inQuotes) {
+        if (char === "\r" && next === "\n") i++;
         row.push(cell);
         rows.push(row);
+        row = [];
+        cell = "";
+      } else {
+        cell += char;
       }
-
-      return rows;
     }
 
-    async function fetchSheet(sheetName) {
-      const response = await fetch(csvUrl(sheetName));
-      if (!response.ok) {
-        throw new Error(`Erro ao carregar a aba: ${sheetName}`);
-      }
+    if (cell.length > 0 || row.length > 0) {
+      row.push(cell);
+      rows.push(row);
+    }
 
-      const csvText = await response.text();
-      const rows = parseCSV(csvText).filter(r => r.some(c => (c || "").trim() !== ""));
+    return rows;
+  }
 
-      if (!rows.length) return [];
+  async function fetchSheet(sheetName) {
+    const response = await fetch(csvUrl(sheetName));
+    if (!response.ok) {
+      throw new Error(`Erro ao carregar a aba: ${sheetName}`);
+    }
 
-      const dataRows = rows.slice(1);
+    const csvText = await response.text();
+    const rows = parseCSV(csvText).filter(r => r.some(c => normalizeText(c) !== ""));
 
-      return dataRows
-        .map(r => ({
-          escola: (r[0] || "").trim(),
-          status: normalizeStatus(r[1] || "")
+    if (rows.length <= 1) return [];
+
+    const dataRows = rows.slice(1);
+
+    return dataRows
+      .map(r => {
+        const escolaOriginal = normalizeText(r[0] || "");
+        const statusOriginal = normalizeText(r[1] || "");
+
+        return {
+          escola: escolaOriginal,
+          escolaKey: normalizeSchoolName(escolaOriginal),
+          status: normalizeStatus(statusOriginal)
+        };
+      })
+      .filter(item => item.escolaKey !== "");
+  }
+
+  async function loadData() {
+    loading.classList.remove("d-none");
+    tableWrapper.classList.add("d-none");
+    loading.textContent = "Carregando dados da planilha...";
+
+    try {
+      const sheetsData = await Promise.all(
+        SHEETS.map(async (sheetName) => ({
+          name: sheetName,
+          rows: await fetchSheet(sheetName)
         }))
-        .filter(item => item.escola);
-    }
+      );
 
-    async function loadData() {
-      loading.classList.remove("d-none");
-      tableWrapper.classList.add("d-none");
-      loading.textContent = "Carregando dados da planilha...";
+      const schoolMap = new Map();
+      let totalOk = 0;
+      let totalPendentes = 0;
 
-      try {
-        const sheetsData = await Promise.all(
-          SHEETS.map(async (sheetName) => ({
-            name: sheetName,
-            rows: await fetchSheet(sheetName)
-          }))
-        );
+      sheetStats = sheetsData.map(sheet => {
+        let ok = 0;
+        let pendente = 0;
 
-        const schoolMap = new Map();
-        let totalOk = 0;
-        let totalPendentes = 0;
+        sheet.rows.forEach(item => {
+          if (!schoolMap.has(item.escolaKey)) {
+            schoolMap.set(item.escolaKey, {
+              escola: item.escola
+            });
+          }
 
-        sheetStats = sheetsData.map(sheet => {
-          let ok = 0;
-          let pendente = 0;
+          const schoolEntry = schoolMap.get(item.escolaKey);
+          schoolEntry[sheet.name] = item.status;
 
-          sheet.rows.forEach(item => {
-            if (!schoolMap.has(item.escola)) {
-              schoolMap.set(item.escola, { escola: item.escola });
-            }
-
-            schoolMap.get(item.escola)[sheet.name] = item.status;
-
-            if (item.status === "Ok") ok++;
-            if (item.status === "Pendente") pendente++;
-            if (item.status === "Ok") totalOk++;
-            if (item.status === "Pendente") totalPendentes++;
-          });
-
-          return {
-            name: sheet.name,
-            ok,
-            pendente,
-            total: sheet.rows.length
-          };
+          if (item.status === "Ok") {
+            ok++;
+            totalOk++;
+          } else if (item.status === "Pendente") {
+            pendente++;
+            totalPendentes++;
+          }
         });
 
-        consolidatedData = Array.from(schoolMap.values())
-          .sort((a, b) => a.escola.localeCompare(b.escola, "pt-BR"));
+        return {
+          name: sheet.name,
+          ok,
+          pendente,
+          total: sheet.rows.length
+        };
+      });
 
-        document.getElementById("totalEscolas").textContent = consolidatedData.length;
-        document.getElementById("totalOk").textContent = totalOk;
-        document.getElementById("totalPendentes").textContent = totalPendentes;
+      consolidatedData = Array.from(schoolMap.values())
+        .sort((a, b) => a.escola.localeCompare(b.escola, "pt-BR"));
 
-        renderSheetSummaries();
-        renderTable();
+      document.getElementById("totalEscolas").textContent = consolidatedData.length;
+      document.getElementById("totalOk").textContent = totalOk;
+      document.getElementById("totalPendentes").textContent = totalPendentes;
 
-        loading.classList.add("d-none");
-        tableWrapper.classList.remove("d-none");
-      } catch (error) {
-        loading.textContent = "Não foi possível carregar os dados. Confira os nomes das abas publicados na constante SHEETS.";
-        console.error(error);
-      }
+      renderSheetSummaries();
+      renderTable();
+
+      loading.classList.add("d-none");
+      tableWrapper.classList.remove("d-none");
+    } catch (error) {
+      console.error(error);
+      loading.textContent = "Não foi possível carregar os dados da planilha.";
     }
+  }
 
-    function renderSheetSummaries() {
-      sheetSummaries.innerHTML = "";
+  function renderSheetSummaries() {
+    sheetSummaries.innerHTML = "";
 
-      sheetStats.forEach(sheet => {
-        const col = document.createElement("div");
-        col.className = "col-md-4";
+    sheetStats.forEach(sheet => {
+      const col = document.createElement("div");
+      col.className = "col-md-4";
 
-        col.innerHTML = `
-          <div class="card card-soft h-100 tab-card">
-            <div class="card-body">
-              <h6 class="fw-bold">${sheet.name}</h6>
-              <div class="text-secondary mb-3">Resumo individual da aba</div>
-              <div class="d-flex justify-content-between mb-2">
-                <span>Ok</span>
-                <strong class="text-success">${sheet.ok}</strong>
-              </div>
-              <div class="d-flex justify-content-between mb-2">
-                <span>Pendente</span>
-                <strong class="text-danger">${sheet.pendente}</strong>
-              </div>
-              <div class="d-flex justify-content-between">
-                <span>Total</span>
-                <strong>${sheet.total}</strong>
-              </div>
+      col.innerHTML = `
+        <div class="card card-soft h-100 tab-card">
+          <div class="card-body">
+            <h6 class="fw-bold">${sheet.name}</h6>
+            <div class="text-secondary mb-3">Resumo individual da aba</div>
+            <div class="d-flex justify-content-between mb-2">
+              <span>Ok</span>
+              <strong class="text-success">${sheet.ok}</strong>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+              <span>Pendente</span>
+              <strong class="text-danger">${sheet.pendente}</strong>
+            </div>
+            <div class="d-flex justify-content-between">
+              <span>Total</span>
+              <strong>${sheet.total}</strong>
             </div>
           </div>
-        `;
+        </div>
+      `;
 
-        sheetSummaries.appendChild(col);
-      });
+      sheetSummaries.appendChild(col);
+    });
+  }
+
+  function renderTable() {
+    tableHeadRow.innerHTML = "<th>Nome da Escola</th>";
+    SHEETS.forEach(sheet => {
+      tableHeadRow.innerHTML += `<th>${sheet}</th>`;
+    });
+
+    const searchValue = normalizeSchoolName(searchInput.value);
+    const filterValue = statusFilter.value;
+
+    const filtered = consolidatedData.filter(item => {
+      const nomeMatch = normalizeSchoolName(item.escola).includes(searchValue);
+      if (!nomeMatch) return false;
+
+      const statuses = SHEETS.map(sheet => item[sheet] || "");
+      const hasOk = statuses.includes("Ok");
+      const hasPendente = statuses.includes("Pendente");
+      const onlyPendentes = statuses.every(s => s === "Pendente" || s === "");
+      const allOk = statuses.every(s => s === "Ok" || s === "");
+
+      if (filterValue === "ok") return hasOk;
+      if (filterValue === "pendente") return hasPendente;
+      if (filterValue === "somente_pendente") return hasPendente && onlyPendentes;
+      if (filterValue === "tudo_ok") return hasOk && allOk;
+
+      return true;
+    });
+
+    tableBody.innerHTML = "";
+
+    if (!filtered.length) {
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="${SHEETS.length + 1}" class="text-center py-4 text-secondary">
+            Nenhuma escola encontrada com esse filtro.
+          </td>
+        </tr>
+      `;
+      return;
     }
 
-    function renderTable() {
-      tableHeadRow.innerHTML = "<th>Nome da Escola</th>";
+    filtered.forEach(item => {
+      const tr = document.createElement("tr");
+      let rowHtml = `<td class="school-name">${item.escola}</td>`;
+
       SHEETS.forEach(sheet => {
-        tableHeadRow.innerHTML += `<th>${sheet}</th>`;
+        rowHtml += `<td class="text-center">${statusBadge(item[sheet] || "")}</td>`;
       });
 
-      const searchValue = searchInput.value.trim().toLowerCase();
-      const filterValue = statusFilter.value;
+      tr.innerHTML = rowHtml;
+      tableBody.appendChild(tr);
+    });
+  }
 
-      const filtered = consolidatedData.filter(item => {
-        const nomeMatch = item.escola.toLowerCase().includes(searchValue);
-        if (!nomeMatch) return false;
+  searchInput.addEventListener("input", renderTable);
+  statusFilter.addEventListener("change", renderTable);
+  reloadBtn.addEventListener("click", loadData);
 
-        const statuses = SHEETS.map(sheet => item[sheet] || "");
-        const hasOk = statuses.includes("Ok");
-        const hasPendente = statuses.includes("Pendente");
-        const onlyPendentes = statuses.every(s => s === "Pendente" || s === "");
-        const allOk = statuses.every(s => s === "Ok" || s === "");
-
-        if (filterValue === "ok") return hasOk;
-        if (filterValue === "pendente") return hasPendente;
-        if (filterValue === "somente_pendente") return hasPendente && onlyPendentes;
-        if (filterValue === "tudo_ok") return hasOk && allOk;
-
-        return true;
-      });
-
-      tableBody.innerHTML = "";
-
-      if (!filtered.length) {
-        tableBody.innerHTML = `
-          <tr>
-            <td colspan="${SHEETS.length + 1}" class="text-center py-4 text-secondary">
-              Nenhuma escola encontrada com esse filtro.
-            </td>
-          </tr>
-        `;
-        return;
-      }
-
-      filtered.forEach(item => {
-        const tr = document.createElement("tr");
-
-        let rowHtml = `<td class="school-name">${item.escola}</td>`;
-        SHEETS.forEach(sheet => {
-          rowHtml += `<td class="text-center">${statusBadge(item[sheet] || "")}</td>`;
-        });
-
-        tr.innerHTML = rowHtml;
-        tableBody.appendChild(tr);
-      });
-    }
-
-    searchInput.addEventListener("input", renderTable);
-    statusFilter.addEventListener("change", renderTable);
-    reloadBtn.addEventListener("click", loadData);
-
-    loadData();
-  </script>
+  loadData();
+</script>
+  
 </body>
 </html>
